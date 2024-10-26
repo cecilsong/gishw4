@@ -1,0 +1,72 @@
+---
+title: "hw4"
+author: "cesong"
+date: "2024-10-26"
+output:
+  pdf_document: 
+    latex_engine: xelatex
+  html_document: default
+---
+
+```{r}
+library(here)
+library(dplyr)  
+library(readr)  #csv
+library(sf)
+library(countrycode)
+library(ggplot2)
+
+```
+
+#read csv file
+```{r}
+ggidata <- read.csv(here("hw4_data", "HDR23-24_Composite_indices_complete_time_series.csv"),
+                     header = TRUE,
+                     sep = ",",
+                     encoding = "latin1") %>%
+  select(gii_2010, gii_2019, iso3, country)
+
+ggidata$gii_difference <- ggidata$gii_2019 - ggidata$gii_2010
+head(ggidata, 4)
+
+```
+#read geojson file
+```{r}
+countries_data <- st_read(here("hw4_data","World_Countries_(Generalized)_9029012925078512962.geojson"))
+
+countries_data <- countries_data %>%
+  mutate(iso3 = countrycode(ISO, origin = "iso2c", destination = "iso3c"),
+         unmatched = is.na(iso3))
+
+head(countries_data, 4)
+```
+#join data and plot
+```{r}
+combined_data <- left_join(countries_data, ggidata, by = "iso3")
+
+ggplot(data = combined_data) +
+  geom_sf(aes(fill = gii_difference), color = "white", size = 0.2) +
+  scale_fill_viridis_c(option = "plasma", name = "2019_2010 GII Difference") + 
+  labs(title = "2019_2010 Global GII Difference Map",
+       subtitle = "Visualizing the change in Gender Inequality Index",
+       caption = "Human Development Reports") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+    plot.subtitle = element_text(hjust = 0.5, size = 10),
+    plot.caption = element_text(size = 8),
+    legend.text = element_text(size = 8),
+    legend.title = element_text(size = 8),
+    legend.key.size = unit(0.5, "cm"),
+    legend.position = "right",
+  )
+
+
+```
+
+
+
+
+
+
+
